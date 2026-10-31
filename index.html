@@ -216,6 +216,9 @@
         /* ---- 修正與相容樣式（沿用原本配色） ---- */
         .modal-overlay[hidden] { display: none; }
 
+        /* 圖示變多之後，小螢幕的視窗要能自己捲動 */
+        .modal { max-height: 88vh; overflow-y: auto; }
+
         button, input, select { font-family: inherit; }
 
         .day-tab { color: var(--text-main); font-size: 1rem; line-height: 1.2; }
@@ -242,6 +245,32 @@
         }
 
         .empty-hint { text-align: center; margin-bottom: 18px; color: var(--text-light); }
+
+        /* 24 小時時間格：整點與半點用粗細區分，空格縮小讓 48 格更好捲動 */
+        .time-slot { min-height: 44px; }
+        .time-slot.has-task { min-height: 60px; }
+        .time-slot.half-hour .time-label { font-weight: 600; color: var(--text-light); background: #fff7fb; }
+
+        /* 卡片上的「每週」小徽章 */
+        .task-card .tag {
+            font-size: 0.72rem; color: #7a5c9e; background: #f3e9ff;
+            border-radius: 8px; padding: 1px 6px; margin-left: 6px;
+        }
+        .task-card.routine { border-style: dashed; }
+
+        /* 圖示選盤 */
+        .icon-picker {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+            gap: 6px; max-height: 170px; overflow-y: auto;
+            background: #fff7fb; border: 2px solid #ffe6f2; border-radius: 12px; padding: 8px;
+        }
+        .icon-choice {
+            background: #fff; border: 2px solid #ffe6f2; border-radius: 10px;
+            font-size: 1.35rem; line-height: 1; padding: 6px 0; cursor: pointer;
+            transition: transform 0.15s, border-color 0.15s, background 0.15s;
+        }
+        .icon-choice:hover { border-color: var(--primary-pink); transform: scale(1.08); }
+        .icon-choice.selected { background: #ffe6f2; border-color: var(--dark-pink); }
 
         .load-error {
             background: #fff3f3; border: 2px solid #ffb3b3; color: #b23b3b;
@@ -287,7 +316,8 @@
             body { padding: 12px; }
             .timeline { padding: 12px; }
             .slot-content { margin-left: 6px; gap: 6px; }
-            .time-slot { min-height: 52px; padding: 4px; }
+            .time-slot { min-height: 40px; padding: 4px; }
+            .time-slot.has-task { min-height: 52px; }
             .time-label { width: 46px; font-size: 0.8rem; padding: 4px 2px; }
 
             .task-card { flex-basis: 100%; flex-wrap: wrap; gap: 6px; padding: 8px; }
@@ -402,8 +432,8 @@
                     <input type="number" id="taskPoints" value="10" min="1" max="100" step="1" inputmode="numeric">
                 </div>
                 <div class="form-group">
-                    <label for="taskIcon">可愛圖示</label>
-                    <select id="taskIcon"></select>
+                    <label id="taskIconLabel">可愛圖示（點一下選一個）</label>
+                    <div class="icon-picker" id="taskIconPicker" role="group" aria-labelledby="taskIconLabel"></div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" data-close="addModal">取消</button>
@@ -430,7 +460,10 @@
         /* ---------- 基本設定 ---------- */
         const STORAGE_KEY = 'sanrio_plan_data';
         const DAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
-        const TIMES = Array.from({ length: 15 }, (_, i) => `${String(7 + i).padStart(2, '0')}:00`);
+        /* 00:00 ~ 23:30，每半小時一格，共 48 格 */
+        const TIMES = Array.from({ length: 48 }, (_, i) =>
+            `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`
+        );
         const ICONS = [
             { value: '🎀', label: '🎀 Hello Kitty' },
             { value: '🐰', label: '🐰 My Melody' },
@@ -440,7 +473,49 @@
             { value: '📚', label: '📚 功課' },
             { value: '📖', label: '📖 閱讀' },
             { value: '🎨', label: '🎨 繪畫' },
-            { value: '🏃', label: '🏃 運動' }
+            { value: '🏃', label: '🏃 運動' },
+            { value: '🐻', label: '🐻 小熊' },
+            { value: '🐼', label: '🐼 貓熊' },
+            { value: '🐨', label: '🐨 無尾熊' },
+            { value: '🐹', label: '🐹 倉鼠' },
+            { value: '🐷', label: '🐷 小豬' },
+            { value: '🐸', label: '🐸 青蛙' },
+            { value: '🐥', label: '🐥 小雞' },
+            { value: '🐙', label: '🐙 章魚' },
+            { value: '🦄', label: '🦄 獨角獸' },
+            { value: '🐳', label: '🐳 鯨魚' },
+            { value: '🦋', label: '🦋 蝴蝶' },
+            { value: '🌈', label: '🌈 彩虹' },
+            { value: '⭐', label: '⭐ 星星' },
+            { value: '🌟', label: '🌟 閃亮星星' },
+            { value: '💖', label: '💖 愛心' },
+            { value: '🍓', label: '🍓 草莓' },
+            { value: '🍰', label: '🍰 蛋糕' },
+            { value: '🍎', label: '🍎 蘋果' },
+            { value: '🥛', label: '🥛 喝牛奶' },
+            { value: '🍙', label: '🍙 飯糰' },
+            { value: '🍱', label: '🍱 便當' },
+            { value: '🧸', label: '🧸 玩偶' },
+            { value: '✏️', label: '✏️ 寫字' },
+            { value: '📝', label: '📝 寫作業' },
+            { value: '🔢', label: '🔢 數學' },
+            { value: '🔤', label: '🔤 英文' },
+            { value: '🧪', label: '🧪 自然' },
+            { value: '🎒', label: '🎒 書包' },
+            { value: '🏫', label: '🏫 上學' },
+            { value: '🚌', label: '🚌 坐車' },
+            { value: '🎹', label: '🎹 彈鋼琴' },
+            { value: '🎵', label: '🎵 聽音樂' },
+            { value: '🚴', label: '🚴 騎腳踏車' },
+            { value: '⚽', label: '⚽ 踢足球' },
+            { value: '🏊', label: '🏊 游泳' },
+            { value: '🎮', label: '🎮 遊戲時間' },
+            { value: '🛁', label: '🛁 洗澡' },
+            { value: '🦷', label: '🦷 刷牙' },
+            { value: '🧹', label: '🧹 打掃' },
+            { value: '⏰', label: '⏰ 起床' },
+            { value: '🛏️', label: '🛏️ 睡覺' },
+            { value: '🐕', label: '🐕 遛狗' }
         ];
         const ICON_VALUES = ICONS.map(item => item.value);
         const STORAGE_WARNING_ID = 'storageNote';
@@ -498,6 +573,7 @@
         let idCounter = 0;
         let storageWarningShown = false;
         let calendarCursor = null;
+        let selectedIcon = ICONS[0].value;
 
         /* ---------- 工具函式 ---------- */
         function makeId() {
@@ -528,6 +604,13 @@
             /* 有指定日期就是「單日任務」，星期幾由日期自動推算；沒有日期則是每週重複的例行任務 */
             const date = parseDateKey(raw.date) ? raw.date.trim() : null;
 
+            /* 每週任務在「指定日期」畫面打勾時，完成紀錄記在 doneDates，才不會影響其他週 */
+            const doneDates = Array.isArray(raw.doneDates)
+                ? Array.from(new Set(raw.doneDates
+                    .filter(value => typeof value === 'string' && parseDateKey(value))
+                    .map(value => value.trim())))
+                : [];
+
             return {
                 id: raw.id === undefined || raw.id === null || raw.id === '' ? makeId() : String(raw.id),
                 day: date ? weekdayOfDateKey(date) : day,
@@ -537,7 +620,8 @@
                 points: points,
                 completed: raw.completed === true,
                 icon: icon,
-                order: Number.isFinite(order) ? order : 0
+                order: Number.isFinite(order) ? order : 0,
+                doneDates: doneDates
             };
         }
 
@@ -583,8 +667,8 @@
         function createDefaultState() {
             return {
                 tasks: [
-                    { id: makeId(), day: DAYS[0], date: null, time: '18:00', title: '寫功課', points: 10, completed: false, icon: '📚', order: 0 },
-                    { id: makeId(), day: DAYS[0], date: null, time: '19:00', title: '閱讀半小時', points: 15, completed: false, icon: '📖', order: 1 }
+                    { id: makeId(), day: DAYS[0], date: null, time: '18:00', title: '寫功課', points: 10, completed: false, icon: '📚', order: 0, doneDates: [] },
+                    { id: makeId(), day: DAYS[0], date: null, time: '19:00', title: '閱讀半小時', points: 15, completed: false, icon: '📖', order: 1, doneDates: [] }
                 ],
                 currentDay: DAYS[0],
                 currentDate: null,
@@ -599,9 +683,19 @@
 
         function scopeTasks() {
             if (state.currentDate) {
-                return state.tasks.filter(task => task.date === state.currentDate);
+                /* 指定日期＝該日期的單日任務 ＋ 該星期幾的每週例行任務，不用再重新填一次 */
+                const weekday = weekdayOfDateKey(state.currentDate);
+                const dated = state.tasks.filter(task => task.date === state.currentDate);
+                const routine = state.tasks.filter(task => !task.date && task.day === weekday);
+                return routine.concat(dated);
             }
             return state.tasks.filter(task => !task.date && task.day === state.currentDay);
+        }
+
+        /* 每週任務在指定日期畫面裡的完成狀態，只看那一天 */
+        function isDoneOn(task, dateKey) {
+            if (!task.date && dateKey) return task.doneDates.includes(dateKey);
+            return task.completed;
         }
 
         function countTasksInSlot(time, exceptId) {
@@ -648,7 +742,8 @@
 
         /* ---------- 畫面更新 ---------- */
         function updateStats() {
-            const completedTasks = state.tasks.filter(task => task.completed);
+            /* 每週任務只要在任何一天完成過，就給一次積分（不重複累加） */
+            const completedTasks = state.tasks.filter(task => task.completed || task.doneDates.length > 0);
             const taskPoints = completedTasks.reduce((sum, task) => sum + task.points, 0);
             const bonusPoints = Object.values(state.reviewBonuses).reduce((sum, value) => sum + value, 0);
 
@@ -679,7 +774,7 @@
             if (!label) return;
 
             if (state.currentDate) {
-                label.textContent = `📌 ${formatDateKey(state.currentDate)}（${weekdayOfDateKey(state.currentDate)}）的安排`;
+                label.textContent = `📌 ${formatDateKey(state.currentDate)}（${weekdayOfDateKey(state.currentDate)}）的安排 · 含每週任務`;
                 backButton.hidden = false;
                 tabs.hidden = true;
                 todayJump.hidden = true;
@@ -723,7 +818,7 @@
 
             for (const time of TIMES) {
                 const slot = document.createElement('div');
-                slot.className = 'time-slot';
+                slot.className = time.endsWith(':30') ? 'time-slot half-hour' : 'time-slot';
                 slot.dataset.time = time;
                 slot.addEventListener('dragover', handleDragOver);
                 slot.addEventListener('dragleave', handleDragLeave);
@@ -739,6 +834,7 @@
                 const slotTasks = dayTasks
                     .filter(task => task.time === time)
                     .sort((a, b) => a.order - b.order);
+                if (slotTasks.length) slot.classList.add('has-task');
                 content.append(...slotTasks.map(createTaskCard));
 
                 slot.append(label, content);
@@ -749,9 +845,14 @@
         }
 
         function createTaskCard(task) {
+            /* 在指定日期畫面看到的每週任務：完成狀態只記在這一天，也不給改時間（避免變成單日任務） */
+            const routineRef = !task.date && !!state.currentDate;
+            const done = isDoneOn(task, state.currentDate);
+
             const card = document.createElement('div');
-            card.className = task.completed ? 'task-card completed' : 'task-card';
-            card.draggable = true;
+            card.className = done ? 'task-card completed' : 'task-card';
+            if (routineRef) card.classList.add('routine');
+            card.draggable = !routineRef;
             card.dataset.id = task.id;
 
             const icon = document.createElement('span');
@@ -769,24 +870,20 @@
             points.textContent = `+${task.points}分`;
             info.append(title, points);
 
-            const moveSelect = document.createElement('select');
-            moveSelect.className = 'move-select';
-            moveSelect.setAttribute('aria-label', `移動「${task.title}」到其他時間`);
-            for (const time of TIMES) {
-                const option = document.createElement('option');
-                option.value = time;
-                option.textContent = time;
-                moveSelect.append(option);
+            if (routineRef) {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.textContent = '每週';
+                tag.title = `每${task.day}的例行任務，時間請到「每週計畫」調整`;
+                points.after(tag);
             }
-            moveSelect.value = task.time;
-            moveSelect.addEventListener('change', () => moveTask(task.id, moveSelect.value));
 
             const check = document.createElement('button');
             check.type = 'button';
-            check.className = task.completed ? 'check-btn checked' : 'check-btn';
-            check.textContent = task.completed ? '✓' : '';
-            check.setAttribute('aria-pressed', String(task.completed));
-            check.setAttribute('aria-label', `${task.completed ? '取消完成' : '標記完成'}「${task.title}」`);
+            check.className = done ? 'check-btn checked' : 'check-btn';
+            check.textContent = done ? '✓' : '';
+            check.setAttribute('aria-pressed', String(done));
+            check.setAttribute('aria-label', `${done ? '取消完成' : '標記完成'}「${task.title}」`);
             check.addEventListener('click', () => toggleTask(task.id));
 
             const remove = document.createElement('button');
@@ -796,21 +893,37 @@
             remove.setAttribute('aria-label', `刪除「${task.title}」`);
             remove.addEventListener('click', () => deleteTask(task.id));
 
-            card.addEventListener('dragstart', event => {
-                draggedTaskId = task.id;
-                card.classList.add('dragging');
-                if (event.dataTransfer) {
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', task.id);
+            if (!routineRef) {
+                const moveSelect = document.createElement('select');
+                moveSelect.className = 'move-select';
+                moveSelect.setAttribute('aria-label', `移動「${task.title}」到其他時間`);
+                for (const time of TIMES) {
+                    const option = document.createElement('option');
+                    option.value = time;
+                    option.textContent = time;
+                    moveSelect.append(option);
                 }
-            });
-            card.addEventListener('dragend', () => {
-                draggedTaskId = null;
-                card.classList.remove('dragging');
-                document.querySelectorAll('.drag-over').forEach(node => node.classList.remove('drag-over'));
-            });
+                moveSelect.value = task.time;
+                moveSelect.addEventListener('change', () => moveTask(task.id, moveSelect.value));
 
-            card.append(icon, info, moveSelect, check, remove);
+                card.addEventListener('dragstart', event => {
+                    draggedTaskId = task.id;
+                    card.classList.add('dragging');
+                    if (event.dataTransfer) {
+                        event.dataTransfer.effectAllowed = 'move';
+                        event.dataTransfer.setData('text/plain', task.id);
+                    }
+                });
+                card.addEventListener('dragend', () => {
+                    draggedTaskId = null;
+                    card.classList.remove('dragging');
+                    document.querySelectorAll('.drag-over').forEach(node => node.classList.remove('drag-over'));
+                });
+
+                card.append(icon, info, moveSelect, check, remove);
+            } else {
+                card.append(icon, info, check, remove);
+            }
             return card;
         }
 
@@ -818,7 +931,17 @@
         function toggleTask(id) {
             const task = state.tasks.find(item => item.id === id);
             if (!task) return;
-            task.completed = !task.completed;
+
+            if (!task.date && state.currentDate) {
+                /* 每週任務：只在這一天記錄完成，下週同一天還是全新的開始 */
+                const key = state.currentDate;
+                const index = task.doneDates.indexOf(key);
+                if (index >= 0) task.doneDates.splice(index, 1);
+                else task.doneDates.push(key);
+            } else {
+                task.completed = !task.completed;
+            }
+
             saveState();
             renderTimeline();
         }
@@ -826,7 +949,11 @@
         function deleteTask(id) {
             const task = state.tasks.find(item => item.id === id);
             if (!task) return;
-            if (!confirm(`確定要刪除「${task.title}」嗎？🐰`)) return;
+
+            const message = !task.date && state.currentDate
+                ? `「${task.title}」是每${task.day}的每週任務，刪除後每個${task.day}都不會出現，確定要刪除嗎？🐰`
+                : `確定要刪除「${task.title}」嗎？🐰`;
+            if (!confirm(message)) return;
 
             state.tasks = state.tasks.filter(item => item.id !== id);
             saveState();
@@ -836,6 +963,8 @@
         function moveTask(id, time) {
             const task = state.tasks.find(item => item.id === id);
             if (!task || !TIMES.includes(time)) return;
+            /* 每週任務的時間要在「每週計畫」調整，避免在單日畫面被改成單日任務 */
+            if (!task.date && state.currentDate) return;
 
             const sameSlot = state.currentDate
                 ? task.date === state.currentDate && task.time === time
@@ -883,6 +1012,25 @@
         }
 
         /* ---------- 新增任務 ---------- */
+        function renderIconPicker() {
+            const picker = $('taskIconPicker');
+            if (!picker) return;
+            picker.replaceChildren(...ICONS.map(item => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = item.value === selectedIcon ? 'icon-choice selected' : 'icon-choice';
+                button.textContent = item.value;
+                button.title = item.label;
+                button.setAttribute('aria-label', item.label);
+                button.setAttribute('aria-pressed', String(item.value === selectedIcon));
+                button.addEventListener('click', () => {
+                    selectedIcon = item.value;
+                    renderIconPicker();
+                });
+                return button;
+            }));
+        }
+
         function populateFormOptions() {
             $('taskTime').replaceChildren(...TIMES.map(time => {
                 const option = document.createElement('option');
@@ -890,18 +1038,14 @@
                 option.textContent = time;
                 return option;
             }));
-            $('taskIcon').replaceChildren(...ICONS.map(icon => {
-                const option = document.createElement('option');
-                option.value = icon.value;
-                option.textContent = icon.label;
-                return option;
-            }));
+            renderIconPicker();
         }
 
         function openAddModal() {
             $('taskForm').reset();
             $('taskTime').value = '18:00';
-            $('taskIcon').value = ICON_VALUES[0];
+            selectedIcon = ICON_VALUES[0];
+            renderIconPicker();
             $('addModalScope').textContent = state.currentDate
                 ? `安排到：${formatDateKey(state.currentDate)}（${weekdayOfDateKey(state.currentDate)}）`
                 : `安排到：每週重複的 ${state.currentDay}`;
@@ -914,7 +1058,7 @@
             const title = $('taskTitle').value.trim();
             const time = $('taskTime').value;
             const points = Number($('taskPoints').value);
-            const icon = $('taskIcon').value;
+            const icon = ICON_VALUES.includes(selectedIcon) ? selectedIcon : '⭐';
 
             if (!title) {
                 alert('請輸入任務名稱哦！🌸');
@@ -941,8 +1085,9 @@
                 title: title,
                 points: points,
                 completed: false,
-                icon: ICON_VALUES.includes(icon) ? icon : '⭐',
-                order: countTasksInSlot(time, null)
+                icon: icon,
+                order: countTasksInSlot(time, null),
+                doneDates: []
             });
 
             saveState();
@@ -960,7 +1105,7 @@
                 return;
             }
 
-            const completed = dayTasks.filter(task => task.completed).length;
+            const completed = dayTasks.filter(task => isDoneOn(task, state.currentDate)).length;
             const total = dayTasks.length;
             const rate = completed / total;
             const reward = rate === 1 ? 50 : rate >= 0.7 ? 20 : 0;
