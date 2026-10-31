@@ -337,6 +337,111 @@
             * { animation: none !important; transition: none !important; }
         }
     </style>
+    <style>
+        /* ---- 機能擴充樣式：懸浮球工具列 / 週次資訊 / 常用任務選單 ---- */
+
+        /* 懸浮球固定在畫面下方，預留空間才不會蓋到最後幾格時間 */
+        body { padding-bottom: 130px; }
+
+        .fab-dock {
+            position: fixed; right: 16px; bottom: 16px; z-index: 80;
+            display: flex; align-items: flex-end;
+        }
+        .fab-panel {
+            display: flex; align-items: stretch; gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid var(--primary-pink); border-radius: 24px;
+            box-shadow: 0 6px 18px rgba(255, 92, 141, 0.3); padding: 8px;
+        }
+        .fab {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            width: 64px; padding: 8px 2px; border: none; border-radius: 16px;
+            background: var(--bg-pink); color: var(--dark-pink);
+            font-family: inherit; font-weight: 700; cursor: pointer;
+            transition: transform 0.15s, background 0.15s;
+        }
+        .fab:hover { transform: translateY(-3px); background: #ffd6e8; }
+        .fab .fab-icon { font-size: 1.35rem; line-height: 1; }
+        .fab .fab-label { font-size: 0.68rem; line-height: 1.2; white-space: nowrap; }
+        .fab-primary { background: var(--primary-pink); color: #fff; }
+        .fab-primary:hover { background: var(--dark-pink); color: #fff; }
+        .fab-collapse {
+            width: 34px; border: 2px solid var(--primary-pink); border-radius: 14px;
+            background: #fff0f5; color: var(--dark-pink); font-size: 0.9rem; font-weight: 700; cursor: pointer;
+        }
+        .fab-collapse:hover { background: #ffe6f2; }
+        .fab-mini {
+            display: none; width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--dark-pink);
+            background: var(--primary-pink); color: #fff; font-size: 1.5rem; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(255, 92, 141, 0.35); align-items: center; justify-content: center;
+        }
+        .fab-dock.collapsed .fab-panel { display: none; }
+        .fab-dock.collapsed .fab-mini { display: flex; }
+        .fab-dock:focus-within { z-index: 95; }
+
+        /* 週次徽章（幾月第幾週 + 日期區間） */
+        .scope-label { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+        .scope-main { line-height: 1.4; }
+        .week-badge {
+            display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap;
+            background: #f3e9ff; color: #6a3f9e; border-radius: 20px;
+            padding: 3px 10px; font-size: 0.78rem; font-weight: 700; line-height: 1.5;
+        }
+        .week-badge .range { color: var(--dark-pink); }
+        .week-badge .cross { color: #a58bc4; font-weight: 600; }
+        .week-badge .week-caption { color: #8c7a8c; font-weight: 600; }
+
+        /* 星期分頁加上日期，才知道「這週」是哪幾天 */
+        .day-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 16px; }
+        .tab-name { font-size: 1rem; font-weight: 700; }
+        .tab-date { font-size: 0.7rem; font-weight: 600; opacity: 0.8; }
+        .day-tab.is-today { border-color: var(--dark-pink); box-shadow: 0 0 0 2px #ffd6e8; }
+
+        /* 常用任務選單讓視窗變長了，按鈕列黏在底部，不用往下捲才能按「確定新增」 */
+        .modal { padding-bottom: 0; }
+        .modal .modal-actions {
+            position: sticky; bottom: 0; z-index: 2;
+            background: #fff; border-top: 2px dashed #ffe6f2;
+            margin: 20px -25px 0; padding: 14px 25px 20px;
+        }
+
+        /* 常用任務快速選單 */
+        .preset-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .preset-tab {
+            border: 2px solid #ffe6f2; background: #fff; color: var(--text-main);
+            border-radius: 20px; padding: 5px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+        }
+        .preset-tab:hover { background: #fff0f5; }
+        .preset-tab.active { background: var(--primary-pink); border-color: var(--dark-pink); color: #fff; }
+        .preset-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 6px;
+            max-height: 190px; overflow-y: auto;
+            background: #fff7fb; border: 2px solid #ffe6f2; border-radius: 12px; padding: 8px;
+        }
+        .preset-item {
+            display: flex; align-items: center; gap: 5px; text-align: left;
+            background: #fff; border: 2px solid #ffe6f2; border-radius: 10px; padding: 6px 8px;
+            font-family: inherit; font-size: 0.82rem; font-weight: 600; color: var(--text-main); cursor: pointer;
+        }
+        .preset-item:hover { border-color: var(--primary-pink); background: #fff0f5; }
+        .preset-item.selected { border-color: var(--dark-pink); background: #ffe6f2; }
+        .preset-item .preset-icon { font-size: 1.05rem; flex: none; }
+        .preset-item .preset-name { min-width: 0; overflow-wrap: anywhere; }
+        .preset-item .preset-time { margin-left: auto; font-size: 0.74rem; color: var(--dark-pink); flex: none; }
+        .preset-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .preset-actions .btn { padding: 6px 12px; font-size: 0.8rem; box-shadow: none; }
+        .preset-note { font-size: 0.75rem; color: var(--text-light); line-height: 1.5; flex: 1 1 150px; }
+
+        @media (max-width: 600px) {
+            body { padding-bottom: 150px; }
+            .fab-dock { left: 10px; right: 10px; bottom: 10px; justify-content: center; }
+            .fab-panel { width: 100%; gap: 6px; padding: 6px; }
+            .fab { flex: 1 1 0; min-width: 0; width: auto; }
+            .fab .fab-label { font-size: 0.62rem; }
+            .day-tab { padding: 7px 12px; }
+            .preset-list { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); max-height: 150px; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -362,7 +467,10 @@
 
         <div class="scope-bar">
             <button type="button" class="btn btn-secondary" id="calendarToggle">📅 萬年曆</button>
-            <div class="scope-label" id="scopeLabel">📌 每週重複任務 · 星期一</div>
+            <div class="scope-label" id="scopeLabel">
+                <span class="scope-main" id="scopeMain">📌 每週重複任務 · 週一</span>
+                <span class="week-badge" id="weekBadge" hidden></span>
+            </div>
             <button type="button" class="btn btn-secondary" id="todayJump" hidden>📅 今天有安排</button>
             <button type="button" class="btn btn-secondary" id="backToWeek" hidden>🔁 每週計畫</button>
         </div>
@@ -395,22 +503,42 @@
             </noscript>
         </main>
 
-        <div class="controls">
-            <button type="button" class="btn" id="addButton">➕ 新增任務</button>
-            <button type="button" class="btn btn-secondary" id="reviewButton">📝 每日復盤</button>
-            <button type="button" class="btn btn-secondary" id="exportButton">💾 匯出紀錄</button>
-            <button type="button" class="btn btn-secondary" id="importButton">📥 匯入紀錄</button>
-            <input type="file" id="importFile" class="file-input" accept=".json,application/json" aria-label="選擇要匯入的紀錄檔">
-        </div>
-
         <footer>
             <p>🌸 資料會自動保存在本機瀏覽器中。換裝置請使用匯出／匯入功能哦！🎀</p>
             <p style="margin-top:5px;">💡 提示：可將任務卡片拖入不同時間格，或使用卡片上的時間選單調整時間。</p>
             <p style="margin-top:5px;">📅 想安排特別的日期？點「萬年曆」挑日子（例如園遊會、考試、生日）。</p>
+            <p style="margin-top:5px;">🎀 下方懸浮球跟著頁面跑，隨時都能按「新增任務／每日復盤／匯出紀錄／匯入紀錄」，按 ▾ 可以收起來。</p>
+            <p style="margin-top:5px;">💾 匯出的紀錄檔是固定格式（<code>sanrio-plan</code> v2），網頁更新後舊檔仍能匯入。</p>
             <p id="storageNote" hidden style="margin-top:8px;color:#c0392b;">
                 ⚠️ 這個瀏覽器目前無法儲存資料（可能使用無痕模式），關閉頁面後紀錄會消失，請記得先匯出紀錄。
             </p>
         </footer>
+    </div>
+
+    <!-- 懸浮球工具列：新增任務／每日復盤／匯出／匯入，隨頁面捲動固定可見 -->
+    <div class="fab-dock" id="fabDock">
+        <div class="fab-panel" id="fabPanel" role="group" aria-label="常用功能">
+            <button type="button" class="fab fab-primary" id="addButton">
+                <span class="fab-icon" aria-hidden="true">➕</span>
+                <span class="fab-label">新增任務</span>
+            </button>
+            <button type="button" class="fab" id="reviewButton">
+                <span class="fab-icon" aria-hidden="true">📝</span>
+                <span class="fab-label">每日復盤</span>
+            </button>
+            <button type="button" class="fab" id="exportButton">
+                <span class="fab-icon" aria-hidden="true">💾</span>
+                <span class="fab-label">匯出紀錄</span>
+            </button>
+            <button type="button" class="fab" id="importButton">
+                <span class="fab-icon" aria-hidden="true">📥</span>
+                <span class="fab-label">匯入紀錄</span>
+            </button>
+            <button type="button" class="fab-collapse" id="fabCollapse"
+                    aria-expanded="true" aria-controls="fabPanel" aria-label="收合常用功能" title="收合">▾</button>
+        </div>
+        <button type="button" class="fab-mini" id="fabMini" aria-label="展開常用功能" title="展開常用功能">🎀</button>
+        <input type="file" id="importFile" class="file-input" accept=".json,application/json" aria-label="選擇要匯入的紀錄檔">
     </div>
 
     <!-- Add Task Modal -->
@@ -419,6 +547,15 @@
             <h2 id="addModalTitle">🐱 新增可愛任務</h2>
             <p class="modal-scope" id="addModalScope"></p>
             <form id="taskForm" novalidate>
+                <div class="form-group">
+                    <label id="presetGroupLabel">常用任務（點一下自動填好，還可以再修改）</label>
+                    <div class="preset-tabs" id="presetTabs" role="group" aria-labelledby="presetGroupLabel"></div>
+                    <div class="preset-list" id="presetList" role="group" aria-label="常用任務清單"></div>
+                    <div class="preset-actions">
+                        <button type="button" class="btn btn-secondary" id="presetAddAll">🍱 一次加入這一組</button>
+                        <span class="preset-note" id="presetNote"></span>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label for="taskTitle">任務名稱</label>
                     <input type="text" id="taskTitle" placeholder="例如：寫數學習作" maxlength="60" autocomplete="off">
@@ -515,10 +652,95 @@
             { value: '🧹', label: '🧹 打掃' },
             { value: '⏰', label: '⏰ 起床' },
             { value: '🛏️', label: '🛏️ 睡覺' },
-            { value: '🐕', label: '🐕 遛狗' }
+            { value: '🐕', label: '🐕 遛狗' },
+            { value: '😴', label: '😴 午睡' },
+            { value: '🍳', label: '🍳 早餐' },
+            { value: '🥗', label: '🥗 蔬菜水果' },
+            { value: '🍚', label: '🍚 盛飯' },
+            { value: '🥤', label: '🥤 飲料' },
+            { value: '💧', label: '💧 喝水' },
+            { value: '🧽', label: '🧽 洗碗' },
+            { value: '🧩', label: '🧩 拼裝' },
+            { value: '💃', label: '💃 跳舞' },
+            { value: '🤸', label: '🤸 體操' },
+            { value: '🎤', label: '🎤 唱歌' },
+            { value: '🧦', label: '🧦 整理衣物' }
         ];
         const ICON_VALUES = ICONS.map(item => item.value);
         const STORAGE_WARNING_ID = 'storageNote';
+
+        /* ---- 匯出／匯入的固定格式（不要跟著內部欄位亂改，版本只增不減） ---- */
+        const EXPORT_FORMAT = 'sanrio-plan';
+        const SCHEMA_VERSION = 2;
+        /* 舊版沒有格式標示，一律視為 v1：日名可能是「星期一」、id 是數字、也沒有 date 欄位 */
+        const LEGACY_SCHEMA_VERSION = 1;
+        /* 介面偏好（懸浮球收合…）另存一個 key，不要混進計畫資料，匯出匯入才不會跑版 */
+        const UI_PREF_KEY = 'sanrio_plan_ui_pref';
+
+        /* 國小三年級的常用任務模板：時間都用半小時格，積分 5～30 分 */
+        const PRESETS = [
+            {
+                name: '起居',
+                icon: '⏰',
+                items: [
+                    { title: '起床穿衣', icon: '⏰', time: '06:30', points: 5 },
+                    { title: '刷牙洗臉', icon: '🦷', time: '07:00', points: 5 },
+                    { title: '自己吃早餐', icon: '🍳', time: '07:30', points: 10 },
+                    { title: '收拾書包', icon: '🎒', time: '08:00', points: 10 },
+                    { title: '午休安靜睡', icon: '😴', time: '13:00', points: 10 },
+                    { title: '換平底鞋', icon: '🧦', time: '16:30', points: 5 },
+                    { title: '洗澡', icon: '🛁', time: '20:00', points: 10 },
+                    { title: '睡前刷牙', icon: '🦷', time: '21:00', points: 5 },
+                    { title: '準時睡覺', icon: '🛏️', time: '21:30', points: 15 }
+                ]
+            },
+            {
+                name: '課業',
+                icon: '📚',
+                items: [
+                    { title: '上課專心聽講', icon: '🏫', time: '08:30', points: 10 },
+                    { title: '抄聯絡簿', icon: '📝', time: '16:30', points: 10 },
+                    { title: '寫功課', icon: '📚', time: '17:00', points: 15 },
+                    { title: '複習今天的課', icon: '✏️', time: '17:30', points: 10 },
+                    { title: '數學練習', icon: '🔢', time: '18:00', points: 10 },
+                    { title: '英文單字', icon: '🔤', time: '18:30', points: 10 },
+                    { title: '課外閱讀', icon: '📖', time: '19:00', points: 15 },
+                    { title: '自然／社會', icon: '🧪', time: '19:30', points: 10 },
+                    { title: '準備隔天課本', icon: '🎒', time: '20:00', points: 10 }
+                ]
+            },
+            {
+                name: '才藝',
+                icon: '🎹',
+                items: [
+                    { title: '練鋼琴', icon: '🎹', time: '16:00', points: 20 },
+                    { title: '直笛練習', icon: '🎵', time: '16:30', points: 15 },
+                    { title: '畫圖', icon: '🎨', time: '15:00', points: 15 },
+                    { title: '跳舞／律動', icon: '💃', time: '16:00', points: 15 },
+                    { title: '唱兒歌', icon: '🎤', time: '17:00', points: 10 },
+                    { title: '樂高拼裝', icon: '🧩', time: '15:30', points: 10 },
+                    { title: '跳繩體能', icon: '🏃', time: '17:00', points: 15 },
+                    { title: '騎腳踏車', icon: '🚴', time: '17:30', points: 15 },
+                    { title: '游泳課', icon: '🏊', time: '18:00', points: 25 },
+                    { title: '踢足球', icon: '⚽', time: '18:00', points: 20 }
+                ]
+            },
+            {
+                name: '飲食',
+                icon: '🍱',
+                items: [
+                    { title: '餐前洗手', icon: '💧', time: '11:30', points: 5 },
+                    { title: '喝牛奶', icon: '🥛', time: '08:00', points: 5 },
+                    { title: '自己盛飯', icon: '🍚', time: '12:00', points: 5 },
+                    { title: '便當吃光光', icon: '🍱', time: '12:00', points: 15 },
+                    { title: '吃蔬菜水果', icon: '🥗', time: '12:30', points: 10 },
+                    { title: '只喝白開水', icon: '💧', time: '15:00', points: 5 },
+                    { title: '飯後水果', icon: '🍎', time: '13:00', points: 5 },
+                    { title: '幫忙洗碗', icon: '🧽', time: '19:30', points: 15 },
+                    { title: '打掃環境', icon: '🧹', time: '20:30', points: 10 }
+                ]
+            }
+        ];
 
         /* 舊版用「星期一」、新版用「週一」，兩種都接受，統一存成「週一」 */
         const DAY_ALIASES = {};
@@ -567,6 +789,35 @@
             return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
         }
 
+        function formatShortDate(date, withYear) {
+            const text = `${date.getMonth() + 1}/${date.getDate()}`;
+            return withYear ? `${date.getFullYear()}/${text}` : text;
+        }
+
+        /* 週一當第一天（Sunday=0 → 6） */
+        function weekdayIndex(date) {
+            return (date.getDay() + 6) % 7;
+        }
+
+        function addDays(date, offset) {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset);
+        }
+
+        /* 一週歸屬哪一個月：以該週「星期四」所在的月份為準。
+           這樣每個月的第 1 週一定從當月頭開始數，跨月的週也不會同時被算進兩個月。 */
+        function weekInfoOf(date) {
+            const monday = addDays(date, -weekdayIndex(date));
+            const sunday = addDays(monday, 6);
+            const thursday = addDays(monday, 3);
+            const crossYear = monday.getFullYear() !== sunday.getFullYear();
+            return {
+                weekLabel: `${thursday.getMonth() + 1}月第${Math.floor((thursday.getDate() - 1) / 7) + 1}週`,
+                rangeLabel: `${formatShortDate(monday, crossYear)} – ${formatShortDate(sunday, crossYear)}`,
+                keys: Array.from({ length: 7 }, (_, i) => toDateKey(addDays(monday, i))),
+                crossMonth: monday.getMonth() !== sunday.getMonth()
+            };
+        }
+
         let state = { tasks: [], currentDay: DAYS[0], currentDate: null, reviewBonuses: {} };
         let draggedTaskId = null;
         let lastFocusedElement = null;
@@ -574,6 +825,8 @@
         let storageWarningShown = false;
         let calendarCursor = null;
         let selectedIcon = ICONS[0].value;
+        let activePresetGroup = 0;
+        let selectedPreset = null;
 
         /* ---------- 工具函式 ---------- */
         function makeId() {
@@ -752,12 +1005,27 @@
         }
 
         function renderTabs() {
-            const tabs = DAYS.map(day => {
+            const week = weekInfoOf(new Date());
+            const todayKey = toDateKey(new Date());
+
+            const tabs = DAYS.map((day, index) => {
                 const button = document.createElement('button');
                 button.type = 'button';
-                button.className = day === state.currentDay ? 'day-tab active' : 'day-tab';
-                button.textContent = day;
+                button.className = 'day-tab';
+                if (day === state.currentDay) button.classList.add('active');
+                if (week.keys[index] === todayKey) button.classList.add('is-today');
+
+                const name = document.createElement('span');
+                name.className = 'tab-name';
+                name.textContent = day;
+
+                const date = document.createElement('span');
+                date.className = 'tab-date';
+                date.textContent = formatShortDate(parseDateKey(week.keys[index]));
+
+                button.append(name, date);
                 button.setAttribute('aria-pressed', String(day === state.currentDay));
+                button.title = `${day}：${formatDateKey(week.keys[index])}`;
                 button.addEventListener('click', () => switchDay(day));
                 return button;
             });
@@ -765,23 +1033,26 @@
             renderScope();
         }
 
-        /* 上方狀態列：顯示目前在看「每週重複任務」還是某個特定日期 */
+        /* 上方狀態列：顯示目前在看「每週重複任務」還是某個特定日期，並附上日期區間 */
         function renderScope() {
             const label = $('scopeLabel');
+            const main = $('scopeMain');
             const backButton = $('backToWeek');
             const tabs = $('dayTabs');
             const todayJump = $('todayJump');
             if (!label) return;
 
             if (state.currentDate) {
-                label.textContent = `📌 ${formatDateKey(state.currentDate)}（${weekdayOfDateKey(state.currentDate)}）的安排 · 含每週任務`;
+                main.textContent = `📌 ${formatDateKey(state.currentDate)}（${weekdayOfDateKey(state.currentDate)}）的安排 · 含每週任務`;
                 backButton.hidden = false;
                 tabs.hidden = true;
                 todayJump.hidden = true;
+                renderWeekBadge(weekInfoOf(parseDateKey(state.currentDate)), '所屬週');
             } else {
-                label.textContent = `📌 每週重複任務 · ${state.currentDay}`;
+                main.textContent = `📌 每週重複任務 · ${state.currentDay}`;
                 backButton.hidden = true;
                 tabs.hidden = false;
+                renderWeekBadge(weekInfoOf(new Date()), '本週');
 
                 /* 提醒：今天有預先安排好的單日任務 */
                 const todayCount = state.tasks.filter(task => task.date === toDateKey(new Date())).length;
@@ -792,6 +1063,27 @@
                     todayJump.hidden = true;
                 }
             }
+        }
+
+        /* 「10月第5週 · 10/26 – 11/01」：讓週計畫模式一眼就知道是哪一個月、哪幾天 */
+        function renderWeekBadge(week, caption) {
+            const badge = $('weekBadge');
+            if (!badge) return;
+
+            badge.replaceChildren(
+                span('week-caption', `🗓️ ${caption}`),
+                span('week-count', week.weekLabel),
+                span('range', week.rangeLabel)
+            );
+            if (week.crossMonth) badge.append(span('cross', '跨月'));
+            badge.hidden = false;
+        }
+
+        function span(className, text) {
+            const node = document.createElement('span');
+            node.className = className;
+            node.textContent = text;
+            return node;
         }
 
         function switchDay(day) {
@@ -1041,11 +1333,111 @@
             renderIconPicker();
         }
 
+        /* ---------- 常用任務快速選單（三年級的起居／課業／才藝／飲食） ---------- */
+        function renderPresetTabs() {
+            const tabs = $('presetTabs');
+            if (!tabs) return;
+            tabs.replaceChildren(...PRESETS.map((group, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = index === activePresetGroup ? 'preset-tab active' : 'preset-tab';
+                button.textContent = `${group.icon} ${group.name}`;
+                button.setAttribute('aria-pressed', String(index === activePresetGroup));
+                button.addEventListener('click', () => {
+                    activePresetGroup = index;
+                    selectedPreset = null;
+                    renderPresetTabs();
+                    renderPresetList();
+                });
+                return button;
+            }));
+        }
+
+        function renderPresetList() {
+            const list = $('presetList');
+            if (!list) return;
+            const group = PRESETS[activePresetGroup];
+
+            list.replaceChildren(...group.items.map(item => {
+                const key = `${group.name}|${item.title}`;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = key === selectedPreset ? 'preset-item selected' : 'preset-item';
+                const icon = span('preset-icon', item.icon);
+                icon.setAttribute('aria-hidden', 'true');
+                button.append(icon, span('preset-name', item.title), span('preset-time', `${item.time} · ${item.points}分`));
+                button.setAttribute('aria-pressed', String(key === selectedPreset));
+                button.addEventListener('click', () => applyPreset(item, key));
+                return button;
+            }));
+
+            const addAll = $('presetAddAll');
+            if (addAll) addAll.textContent = `🍱 一次加入這一組（${group.items.length} 項）`;
+            const note = $('presetNote');
+            if (note) {
+                note.textContent = `「${group.name}」共 ${group.items.length} 項：點一下幫你填好，也可以整組加入目前的${state.currentDate ? '這一天' : '每週計畫'}。`;
+            }
+        }
+
+        function applyPreset(item, key) {
+            selectedPreset = key;
+            $('taskTitle').value = item.title;
+            $('taskTime').value = item.time;
+            $('taskPoints').value = String(item.points);
+            selectedIcon = ICON_VALUES.includes(item.icon) ? item.icon : '⭐';
+            renderIconPicker();
+            renderPresetList();
+            $('taskTitle').focus();
+        }
+
+        function addPresetGroup() {
+            const group = PRESETS[activePresetGroup];
+            const taken = new Set(scopeTasks().map(task => task.title));
+            const date = state.currentDate;
+            let added = 0;
+            let skipped = 0;
+
+            group.items.forEach(item => {
+                /* 同名任務已經排在目前範圍裡了，整組加入時跳過，才不會越按越多重複的 */
+                if (taken.has(item.title)) {
+                    skipped += 1;
+                    return;
+                }
+                taken.add(item.title);
+                added += 1;
+                state.tasks.push({
+                    id: makeId(),
+                    day: date ? weekdayOfDateKey(date) : state.currentDay,
+                    date: date,
+                    time: item.time,
+                    title: item.title,
+                    points: item.points,
+                    completed: false,
+                    icon: ICON_VALUES.includes(item.icon) ? item.icon : '⭐',
+                    order: countTasksInSlot(item.time, null),
+                    doneDates: []
+                });
+            });
+
+            if (!added) {
+                alert(`「${group.name}」的任務這${date ? '一天' : '一週'}已經都排好了哦！🌸`);
+                return;
+            }
+
+            saveState();
+            renderTimeline();
+            renderPresetList();
+            alert(`已加入 ${added} 個「${group.name}」任務${skipped ? `（${skipped} 個重複的自動跳過）` : ''}！🎀✨`);
+        }
+
         function openAddModal() {
             $('taskForm').reset();
             $('taskTime').value = '18:00';
             selectedIcon = ICON_VALUES[0];
+            selectedPreset = null;
             renderIconPicker();
+            renderPresetTabs();
+            renderPresetList();
             $('addModalScope').textContent = state.currentDate
                 ? `安排到：${formatDateKey(state.currentDate)}（${weekdayOfDateKey(state.currentDate)}）`
                 : `安排到：每週重複的 ${state.currentDay}`;
@@ -1250,20 +1642,69 @@
         }
 
         /* ---------- 匯出／匯入 ---------- */
+        const EXPORT_HELP = '固定格式：data.tasks 是任務清單（date 有值 = 只有那一天；date 為 null = 每週重複的例行任務，doneDates 記錄哪幾天完成過），data.reviewBonuses 是每日復盤獎勵（索引為「週一」～「週日」或「YYYY-MM-DD」）。匯入時看不懂的欄位會被忽略，缺少的欄位補預設值。';
+
+        /* 只輸出這些固定欄位：以後內部 state 加了新東西，也不會污染紀錄檔格式 */
+        function buildExportPayload() {
+            return {
+                format: EXPORT_FORMAT,
+                schemaVersion: SCHEMA_VERSION,
+                app: '三麗鷗可愛計畫本',
+                exportedAt: new Date().toISOString(),
+                help: EXPORT_HELP,
+                summary: {
+                    taskCount: state.tasks.length,
+                    weeklyCount: state.tasks.filter(task => !task.date).length,
+                    datedCount: state.tasks.filter(task => task.date).length
+                },
+                data: {
+                    tasks: state.tasks.map(task => ({
+                        id: task.id,
+                        day: task.day,
+                        date: task.date || null,
+                        time: task.time,
+                        title: task.title,
+                        points: task.points,
+                        completed: task.completed === true,
+                        icon: task.icon,
+                        order: task.order,
+                        doneDates: task.doneDates.slice()
+                    })),
+                    reviewBonuses: Object.assign({}, state.reviewBonuses)
+                }
+            };
+        }
+
+        /* v2 有 format 欄位；v1（舊版直接把整個 state 存成 JSON）沒有 format，一律當舊檔自動轉換 */
+        function readImportPayload(parsed) {
+            if (parsed && typeof parsed === 'object' && parsed.format === EXPORT_FORMAT) {
+                const version = Number(parsed.schemaVersion);
+                return {
+                    version: Number.isInteger(version) && version >= 1 ? version : SCHEMA_VERSION,
+                    body: (parsed.data && typeof parsed.data === 'object') ? parsed.data : parsed
+                };
+            }
+            return { version: LEGACY_SCHEMA_VERSION, body: parsed };
+        }
+
+        function formatLabelOf(version) {
+            return version === LEGACY_SCHEMA_VERSION ? '舊版格式（v1）' : `${EXPORT_FORMAT} v${version}`;
+        }
+
         function exportData() {
-            const dataStr = JSON.stringify(state, null, 2);
+            const dataStr = JSON.stringify(buildExportPayload(), null, 2);
             const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
             const url = URL.createObjectURL(blob);
 
             const link = document.createElement('a');
             link.href = url;
-            link.download = `sanrio_plan_${new Date().toISOString().slice(0, 10)}.json`;
+            link.download = `sanrio-plan-v${SCHEMA_VERSION}-${new Date().toISOString().slice(0, 10)}.json`;
             document.body.append(link);
             link.click();
             link.remove();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-            alert('紀錄已匯出！請將檔案保存到安全的地方哦～💾🌸');
+            alert(`紀錄已匯出！（格式 ${EXPORT_FORMAT} v${SCHEMA_VERSION}，共 ${state.tasks.length} 個任務）\n請將檔案保存到安全的地方哦～💾🌸`);
         }
 
         async function importData(event) {
@@ -1295,15 +1736,37 @@
                 return;
             }
 
+            const payload = readImportPayload(parsed);
             let imported;
             try {
-                imported = normalizeState(parsed);
+                imported = normalizeState(payload.body);
             } catch (error) {
-                alert('檔案格式不正確，請使用本網頁匯出的紀錄檔。');
+                console.warn('匯入的紀錄檔無法解析：', error);
+                alert(`檔案格式不正確，請使用本網頁匯出的紀錄檔。（需要 ${EXPORT_FORMAT} v1～v${SCHEMA_VERSION}）`);
                 input.value = '';
                 return;
             }
 
+            const rawCount = Array.isArray(payload.body.tasks) ? payload.body.tasks.length : 0;
+            const skipped = Math.max(0, rawCount - imported.tasks.length);
+            const notices = [];
+            if (payload.version > SCHEMA_VERSION) notices.push(`這個檔案來自較新的版本 v${payload.version}，新功能可能不會顯示`);
+            else if (payload.version === LEGACY_SCHEMA_VERSION) notices.push(`偵測到舊版紀錄，已自動轉換成 v${SCHEMA_VERSION}`);
+            if (skipped) notices.push(`${skipped} 筆格式不符的任務會被略過`);
+
+            const question = [
+                `讀到 ${formatLabelOf(payload.version)}：${imported.tasks.length} 個任務。`,
+                notices.length ? `⚠️ ${notices.join('；')}` : '',
+                `匯入後會「取代」目前計畫本裡的 ${state.tasks.length} 個任務，確定要匯入嗎？💾`
+            ].filter(Boolean).join('\n');
+            if (!confirm(question)) {
+                input.value = '';
+                return;
+            }
+
+            /* 匯入只換資料、不換介面：繼續留在使用者正在看的那一天／那一週 */
+            imported.currentDay = state.currentDay;
+            imported.currentDate = state.currentDate;
             state = imported;
             calendarCursor = null;
             saveState();
@@ -1311,11 +1774,40 @@
             renderTimeline();
             if (!$('calendarPanel').hidden) renderCalendar();
 
-            const rawCount = Array.isArray(parsed.tasks) ? parsed.tasks.length : 0;
-            const skipped = Math.max(0, rawCount - state.tasks.length);
-            const skippedNote = skipped ? `（略過 ${skipped} 筆格式不符的資料）` : '';
-            alert(`成功匯入紀錄！共有 ${state.tasks.length} 個任務${skippedNote}，繼續加油哦！🎀✨`);
+            alert(`成功匯入紀錄！共有 ${state.tasks.length} 個任務${skipped ? `（已略過 ${skipped} 筆格式不符的資料）` : ''}，繼續加油哦！🎀✨`);
             input.value = '';
+        }
+
+        /* ---------- 懸浮球工具列 ---------- */
+        /* 介面偏好獨立存一個 key（不進計畫資料），匯出匯入才不會被懸浮球狀態干擾 */
+        function readUiPrefs() {
+            try {
+                const raw = localStorage.getItem(UI_PREF_KEY);
+                const parsed = raw ? JSON.parse(raw) : null;
+                return (parsed && typeof parsed === 'object') ? parsed : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function saveUiPref(patch) {
+            try {
+                localStorage.setItem(UI_PREF_KEY, JSON.stringify(Object.assign(readUiPrefs(), patch)));
+            } catch (error) {
+                /* 偏好存不進去（例如無痕模式）不影響任務資料 */
+            }
+        }
+
+        function setDockCollapsed(collapsed, persist) {
+            const dock = $('fabDock');
+            if (!dock) return;
+            dock.classList.toggle('collapsed', collapsed);
+            const collapse = $('fabCollapse');
+            if (collapse) {
+                collapse.setAttribute('aria-expanded', String(!collapsed));
+                collapse.setAttribute('aria-label', collapsed ? '展開常用功能' : '收合常用功能');
+            }
+            if (persist !== false) saveUiPref({ dockCollapsed: collapsed });
         }
 
         /* ---------- 視窗控制 ---------- */
@@ -1370,6 +1862,11 @@
             $('exportButton').addEventListener('click', exportData);
             $('importButton').addEventListener('click', () => $('importFile').click());
             $('importFile').addEventListener('change', importData);
+
+            $('presetAddAll').addEventListener('click', addPresetGroup);
+            $('fabCollapse').addEventListener('click', () => setDockCollapsed(true));
+            $('fabMini').addEventListener('click', () => setDockCollapsed(false));
+            setDockCollapsed(readUiPrefs().dockCollapsed === true, false);
 
             $('calendarToggle').addEventListener('click', () => {
                 const panel = $('calendarPanel');
